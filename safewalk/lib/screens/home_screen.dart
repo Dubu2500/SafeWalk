@@ -4,6 +4,8 @@ import '../data/home_data.dart';
 import '../models/destination.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/trusted_contact_card.dart';
+import '../widgets/profile_drawer.dart';
+import '../widgets/pending_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,9 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _query = '';
 
   void _showNotice(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showPendingDialog(context, '$message Funcionalidad pendiente.');
   }
 
   @override
@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return Scaffold(
+      endDrawer: const ProfileDrawer(),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -66,22 +67,29 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Container(
-                        width: 50,
-                        height: 50,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF2C408F), Color(0xFF4C7AE0)],
-                          ),
-                        ),
-                        child: const Text(
-                          'R',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                      Builder(
+                        builder: (context) => IconButton(
+                          tooltip: 'Abrir menú de perfil',
+                          onPressed: () => Scaffold.of(context).openEndDrawer(),
+                          padding: EdgeInsets.zero,
+                          icon: Container(
+                            width: 50,
+                            height: 50,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF2C408F), Color(0xFF4C7AE0)],
+                              ),
+                            ),
+                            child: const Text(
+                              'R',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -90,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 32),
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(

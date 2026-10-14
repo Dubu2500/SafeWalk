@@ -24,10 +24,10 @@ class TrustedContactCard extends StatelessWidget {
         ],
       ),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xFFEEEEF2)),
+          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
