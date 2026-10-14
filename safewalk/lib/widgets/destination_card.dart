@@ -32,13 +32,13 @@ class DestinationCard extends StatelessWidget {
           ],
         ),
         child: Material(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
             side: BorderSide(
               color: selected
                   ? const Color(0xFF648ADC)
-                  : const Color(0xFFEEEEF2),
+                  : Theme.of(context).colorScheme.outlineVariant,
               width: selected ? 2 : 1,
             ),
           ),
@@ -54,7 +54,9 @@ class DestinationCard extends StatelessWidget {
                     height: 60,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF2B3651)
+                          : selected
                           ? const Color(0xFFEEF2FD)
                           : const Color(0xFFF3F5F9),
                       borderRadius: BorderRadius.circular(20),
