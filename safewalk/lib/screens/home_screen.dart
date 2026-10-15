@@ -190,9 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () => _showNotice(
-                        'Destino seleccionado: ${_selectedDestination.subtitle}. El inicio del trayecto estará disponible próximamente.',
-                      ),
+                      onPressed: () => Navigator.pushNamed(context, '/map'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,

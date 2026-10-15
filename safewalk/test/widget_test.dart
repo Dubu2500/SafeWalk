@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:safewalk/main.dart';
 import 'package:safewalk/models/app_settings.dart';
+import 'package:safewalk/screens/login_screen.dart';
+import 'package:safewalk/screens/map_screen.dart';
 import 'package:safewalk/screens/register_screen.dart';
 import 'package:safewalk/screens/settings_screen.dart';
 import 'package:safewalk/theme/app_theme.dart';
@@ -11,7 +13,7 @@ import 'package:safewalk/widgets/destination_card.dart';
 void main() {
   testWidgets('App starts at the plain login placeholder', (tester) async {
     await tester.pumpWidget(const MyApp());
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
   });
 
   testWidgets(
@@ -22,7 +24,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(const MyApp());
-      Navigator.of(tester.element(find.text('Login'))).pushNamed('/register');
+      Navigator.of(tester.element(find.byType(LoginScreen))).pushNamed('/register');
       await tester.pumpAndSettle();
       expect(find.text('Nombre completo'), findsOneWidget);
       await tester.tap(find.byTooltip('Mostrar contraseña').first);
@@ -64,7 +66,7 @@ void main() {
 
   testWidgets('Logout returns to the login placeholder', (tester) async {
     await tester.pumpWidget(const MyApp());
-    Navigator.of(tester.element(find.text('Login'))).pushNamed('/home');
+    Navigator.of(tester.element(find.byType(LoginScreen))).pushNamed('/home');
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Abrir menú de perfil'));
     await tester.pumpAndSettle();
@@ -75,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Salir'));
     await tester.pumpAndSettle();
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(HomeScreen), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -167,16 +169,31 @@ void main() {
               .copyWith(textScaler: const TextScaler.linear(1.5)),
           child: child!,
         ),
+        routes: {'/map': (_) => const MapScreen()},
         home: const HomeScreen(),
       ),
     );
     await tester.ensureVisible(find.text('INICIAR SAFEWALK'));
     await tester.tap(find.text('INICIAR SAFEWALK'));
-    await tester.pump();
-    expect(
-      find.textContaining('El inicio del trayecto estará disponible'),
-      findsOneWidget,
-    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MapScreen), findsOneWidget);
+    expect(find.text('SafeWalk activo'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Map shows the off-route alert and closes it', (tester) async {
+    tester.view.physicalSize = const Size(430, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: MapScreen()));
+    await tester.tap(find.text('Simular fuera de ruta'));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Todo está bien?'), findsOneWidget);
+    await tester.tap(find.text('Sí, estoy bien'));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Todo está bien?'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
