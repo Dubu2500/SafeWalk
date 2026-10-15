@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'models/app_settings.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/map_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
@@ -35,12 +37,13 @@ class _MyAppState extends State<MyApp> {
         themeMode: _settings.darkMode ? ThemeMode.dark : ThemeMode.light,
         initialRoute: const String.fromEnvironment(
           'INITIAL_ROUTE',
-          defaultValue: '/register',
+          defaultValue: '/',
         ),
         routes: {
-          '/': (_) => const Scaffold(body: Center(child: Text('Login'))),
+          '/': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
           '/home': (_) => const HomeScreen(),
+          '/map': (_) => const MapScreen(),
           '/settings': (_) => const SettingsScreen(),
         },
       ),
