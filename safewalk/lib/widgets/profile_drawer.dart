@@ -57,6 +57,15 @@ class ProfileDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.people_outline_rounded),
+            title: const Text('Contactos de confianza'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/contacts');
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.tune_rounded),
             title: const Text('Ajustes'),
             trailing: const Icon(Icons.chevron_right_rounded),

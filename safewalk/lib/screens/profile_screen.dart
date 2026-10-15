@@ -167,8 +167,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+              SettingsSection(
+                title: 'Tu red de confianza',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.people_outline_rounded),
+                    title: const Text('Contactos de confianza'),
+                    subtitle: Text(
+                      '${trustedContacts.length} personas te acompañan',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.pushNamed(context, '/contacts'),
+                  ),
+                ],
+              ),
               if (_editing) ...[
-                PrimaryButton(label: 'GUARDAR CAMBIOS', onPressed: _saveChanges),
+                PrimaryButton(
+                  label: 'GUARDAR CAMBIOS',
+                  onPressed: _saveChanges,
+                ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: _cancelEditing,
