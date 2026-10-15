@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../data/home_data.dart';
 import 'brand_mark.dart';
-import 'pending_dialog.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
@@ -54,10 +53,7 @@ class ProfileDrawer extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {
               Navigator.pop(context);
-              showPendingDialog(
-                context,
-                'Aquí podrás consultar y editar tu nombre, correo y foto de perfil. Funcionalidad pendiente.',
-              );
+              Navigator.pushNamed(context, '/profile');
             },
           ),
           ListTile(
