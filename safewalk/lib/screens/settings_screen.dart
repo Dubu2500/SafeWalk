@@ -107,10 +107,7 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('Contacto de confianza'),
                     subtitle: const Text('María · Disponible'),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => showPendingDialog(
-                      context,
-                      'Aquí podrás elegir y gestionar a las personas que te acompañarán durante tus trayectos. Funcionalidad pendiente.',
-                    ),
+                    onTap: () => Navigator.pushNamed(context, '/contacts'),
                   ),
                   const Divider(height: 1, indent: 20, endIndent: 20),
                   ExpansionTile(

@@ -169,9 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   TrustedContactCard(
                     name: trustedContactName,
-                    onTap: () => _showNotice(
-                      'La gestión de contactos estará disponible próximamente.',
-                    ),
+                    onTap: () => Navigator.pushNamed(context, '/contacts'),
                   ),
                   const SizedBox(height: 22),
                   DecoratedBox(
