@@ -4,8 +4,10 @@ import 'models/app_settings.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/trusted_contacts_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() => runApp(const MyApp());
@@ -45,6 +47,8 @@ class _MyAppState extends State<MyApp> {
           '/home': (_) => const HomeScreen(),
           '/map': (_) => const MapScreen(),
           '/settings': (_) => const SettingsScreen(),
+          '/profile': (_) => const ProfileScreen(),
+          '/contacts': (_) => const TrustedContactsScreen(),
         },
       ),
     ),
