@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1019858631171",
+    "project_id": "safewalk-fb1e9",
+    "storage_bucket": "safewalk-fb1e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019858631171:android:bb10881c7983505877ec36",
+        "android_client_info": {
+          "package_name": "com.example.safewalk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1019858631171-jmr6rukf7v1oc0tkpbckeuitgk2udrpj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.safewalk",
+            "certificate_hash": "cb4ba65dfa0697d5bad151b553d2c87e8a39147a"
+          }
+        },
+        {
+          "client_id": "1019858631171-sljtknk8956vu76s3318ri846rclvnjh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJY6g0B_p8tZ0aHFGzRiWEsRPbpXiBkS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1019858631171-sljtknk8956vu76s3318ri846rclvnjh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1019858631171-7bh4qb1m9e6ji1kf1t8167pm8h8570la.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.safewalk"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

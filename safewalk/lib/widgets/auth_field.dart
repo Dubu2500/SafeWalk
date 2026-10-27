@@ -9,6 +9,9 @@ class AuthField extends StatefulWidget {
     this.password = false,
     this.keyboardType,
     this.autofillHints,
+    this.controller,
+    this.errorText,
+    this.onChanged,
   });
   final String label;
   final String hint;
@@ -16,6 +19,9 @@ class AuthField extends StatefulWidget {
   final bool password;
   final TextInputType? keyboardType;
   final Iterable<String>? autofillHints;
+  final TextEditingController? controller;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
   @override
   State<AuthField> createState() => _AuthFieldState();
 }
@@ -34,6 +40,8 @@ class _AuthFieldState extends State<AuthField> {
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: widget.controller,
+          onChanged: widget.onChanged,
           obscureText: widget.password && !_visible,
           keyboardType: widget.keyboardType,
           autofillHints: widget.autofillHints,
@@ -41,6 +49,8 @@ class _AuthFieldState extends State<AuthField> {
           enableSuggestions: !widget.password,
           decoration: InputDecoration(
             hintText: widget.hint,
+            errorText: widget.errorText,
+            errorMaxLines: 2,
             prefixIcon: Icon(widget.icon, size: 21),
             suffixIcon: widget.password
                 ? IconButton(

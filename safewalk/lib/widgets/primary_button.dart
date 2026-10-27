@@ -5,9 +5,11 @@ class PrimaryButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.loading = false,
   });
   final String label;
   final VoidCallback onPressed;
+  final bool loading;
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
@@ -24,7 +26,7 @@ class PrimaryButton extends StatelessWidget {
       ],
     ),
     child: ElevatedButton(
-      onPressed: onPressed,
+      onPressed: loading ? () {} : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -32,11 +34,20 @@ class PrimaryButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-      ),
+      child: loading
+          ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white,
+              ),
+            )
+          : Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
     ),
   );
 }
