@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/current_user.dart';
 import '../models/app_settings.dart';
 import '../widgets/brand_mark.dart';
 import '../widgets/pending_dialog.dart';
@@ -154,9 +155,9 @@ class SettingsScreen extends StatelessWidget {
                 onPressed: () => showDialog<void>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    title: const Text('¿Salir de la demo?'),
+                    title: const Text('¿Cerrar sesión?'),
                     content: const Text(
-                      'Volverás al inicio de sesión. La autenticación y el cierre de sesión real están pendientes.',
+                      'Volverás al inicio de sesión. Tendrás que ingresar de nuevo tu correo y contraseña.',
                     ),
                     actions: [
                       TextButton(
@@ -164,8 +165,10 @@ class SettingsScreen extends StatelessWidget {
                         child: const Text('Cancelar'),
                       ),
                       FilledButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(dialogContext);
+                          await signOutCurrentUser();
+                          if (!context.mounted) return;
                           Navigator.pushNamedAndRemoveUntil(
                             context,
                             '/',

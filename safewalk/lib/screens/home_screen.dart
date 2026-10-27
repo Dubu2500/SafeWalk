@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/current_user.dart';
 import '../data/home_data.dart';
 import '../models/destination.dart';
 import '../widgets/destination_card.dart';
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final name = currentUserName();
     final query = _query.trim().toLowerCase();
     final visibleDestinations = destinations.where(
       (destination) => '${destination.title} ${destination.subtitle}'
@@ -44,19 +46,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Hola, $userName 👋',
-                              style: TextStyle(
+                              'Hola, $name',
+                              style: const TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            SizedBox(height: 6),
-                            Text(
+                            const SizedBox(height: 6),
+                            const Text(
                               '¿A dónde vas hoy?',
                               style: TextStyle(
                                 fontSize: 17,
@@ -82,9 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 colors: [Color(0xFF2C408F), Color(0xFF4C7AE0)],
                               ),
                             ),
-                            child: const Text(
-                              'R',
-                              style: TextStyle(
+                            child: Text(
+                              name.substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
