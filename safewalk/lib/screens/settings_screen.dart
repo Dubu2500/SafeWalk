@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../data/current_user.dart';
 import '../models/app_settings.dart';
+import '../providers/user_provider.dart';
 import '../widgets/brand_mark.dart';
 import '../widgets/pending_dialog.dart';
 import '../widgets/settings_section.dart';
@@ -166,8 +167,9 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       FilledButton(
                         onPressed: () async {
+                          final userProvider = context.read<UserProvider>();
                           Navigator.pop(dialogContext);
-                          await signOutCurrentUser();
+                          await userProvider.signOut();
                           if (!context.mounted) return;
                           Navigator.pushNamedAndRemoveUntil(
                             context,

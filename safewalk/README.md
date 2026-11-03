@@ -18,8 +18,9 @@ Para previsualizar una pantalla: `flutter run --dart-define=INITIAL_ROUTE=/regis
 ## Interfaz y componentes
 
 - Pantallas: login, registro, Home, trayecto (mapa) y ajustes.
-- Inicio de sesión con Google (`google_sign_in` + `GoogleAuthProvider.credential` en `lib/data/current_user.dart`). Requiere registrar la huella SHA-1 de la app Android en Firebase.
-- Firebase Authentication con correo y contraseña: registro, inicio de sesión, sesión persistente y cierre de sesión. `lib/auth_gate.dart` escucha `userChanges()` con un `StreamBuilder` y muestra el login o Home según haya sesión. Los campos vacíos o inválidos muestran su error en rojo debajo de cada campo; los errores de Firebase aparecen en rojo arriba del botón.
+- Estado de autenticación con el paquete [provider](https://pub.dev/packages/provider): `UserProvider` (`lib/providers/user_provider.dart`) es un `ChangeNotifier` que escucha `userChanges()` de Firebase y expone el usuario, su nombre e inicio/cierre de sesión. `AuthGate`, Home, el Drawer, Ajustes, login y registro lo usan con `context.watch` / `context.read`.
+- Inicio de sesión con Google (`google_sign_in` + `GoogleAuthProvider.credential` en `lib/providers/user_provider.dart`). Requiere registrar la huella SHA-1 de la app Android en Firebase.
+- Firebase Authentication con correo y contraseña: registro, inicio de sesión, sesión persistente y cierre de sesión. `lib/auth_gate.dart` lee `UserProvider` con `context.watch` y muestra el login o Home según haya sesión. Los campos vacíos o inválidos muestran su error en rojo debajo de cada campo; los errores de Firebase aparecen en rojo arriba del botón.
 - Componentes reutilizables en `lib/widgets`, modelos en `lib/models`, datos de ejemplo en `lib/data` y temas en `lib/theme`.
 - Modo oscuro global, visibilidad de contraseñas, casilla de términos, búsqueda, selección de destino y preferencias que redibujan la interfaz.
 - Preferencias mantenidas durante la sesión; al reiniciar vuelven a sus valores iniciales.
