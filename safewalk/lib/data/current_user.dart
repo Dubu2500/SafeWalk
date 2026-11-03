@@ -4,14 +4,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'home_data.dart';
 
-// Web client (client_type 3) from android/app/google-services.json.
 const _googleServerClientId =
     '1019858631171-sljtknk8956vu76s3318ri846rclvnjh.apps.googleusercontent.com';
 
 bool _googleReady = false;
 
-// Uses the signed-in Firebase user; falls back to the demo name when
-// Firebase is not initialized (widget tests) or the user has no name.
 String currentUserName() {
   if (Firebase.apps.isEmpty) return userName;
   final user = FirebaseAuth.instance.currentUser;
@@ -22,8 +19,6 @@ String currentUserName() {
   return userName;
 }
 
-// Opens the Google account picker and signs in to Firebase with that account.
-// Returns false if the user closes the picker without choosing an account.
 Future<bool> signInWithGoogle() async {
   final googleSignIn = GoogleSignIn.instance;
   if (!_googleReady) {
