@@ -56,6 +56,20 @@ class MapScreen extends StatelessWidget {
                   children: [
                     const CompanionCard(name: trustedContactName),
                     const SizedBox(height: 14),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                      ),
+                      onPressed: () {
+                        showPendingDialog(
+                          context,
+                          'Aquí podrás compartir tu viaje en tiempo real con $trustedContactName.',
+                        );
+                      },
+                      icon: const Icon(Icons.share_location_rounded),
+                      label: const Text('Compartir viaje'),
+                    ),
+                    const SizedBox(height: 12),
                     TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.red.shade50,
