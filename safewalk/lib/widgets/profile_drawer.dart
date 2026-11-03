@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../data/current_user.dart';
+import '../providers/user_provider.dart';
 import 'brand_mark.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
   @override
   Widget build(BuildContext context) {
-    final name = currentUserName();
+    final name = context.watch<UserProvider>().displayName;
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: SafeArea(

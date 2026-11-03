@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'providers/user_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -9,14 +10,10 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.userChanges(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const LoginScreen();
-        }
-        return const HomeScreen();
-      },
-    ); // StreamBuilder
+    final isLoggedIn = context.watch<UserProvider>().isLoggedIn;
+    if (!isLoggedIn) {
+      return const LoginScreen();
+    }
+    return const HomeScreen();
   }
 }

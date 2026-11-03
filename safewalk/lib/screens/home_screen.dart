@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../data/current_user.dart';
 import '../data/home_data.dart';
 import '../models/destination.dart';
+import '../providers/user_provider.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/trusted_contact_card.dart';
 import '../widgets/profile_drawer.dart';
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = currentUserName();
+    final name = context.watch<UserProvider>().displayName;
     final query = _query.trim().toLowerCase();
     final visibleDestinations = destinations.where(
       (destination) => '${destination.title} ${destination.subtitle}'

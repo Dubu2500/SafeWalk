@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/user_provider.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/form_error_text.dart';
@@ -69,13 +71,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _loading = true);
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _email.text.trim(),
-            password: _password.text,
-          );
-      await credential.user?.updateDisplayName(_name.text.trim());
-      await credential.user?.reload();
+      await context.read<UserProvider>().register(
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+        password: _password.text,
+      );
       if (!mounted) return;
       Navigator.pop(context);
     } on FirebaseAuthException catch (error) {
