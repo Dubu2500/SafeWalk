@@ -1,105 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../data/home_data.dart';
-import '../widgets/friend_card.dart';
+import '../providers/account_provider.dart';
 import '../widgets/off_route.dart';
 import '../widgets/pending_dialog.dart';
-import '../widgets/trip_header.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
+    final account = context.watch<AccountProvider>();
+    final destination = account.selectedDestination;
+    final contact = account.primaryContact;
     return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const TripHeader(),
-
-              // Aquí irá el mapa
-              Container(
-                height: 320,
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                child: Stack(
-                  children: [
-                    const Positioned(
-                      left: 16,
-                      bottom: 16,
-                      child: Chip(label: Text('1.8 km · 18 min')),
-                    ),
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      top: 16,
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: ActionChip(
-                          label: const Text('Simular fuera de ruta'),
-                          onPressed: () {
-                            showOffRouteDialog(context, trustedContactName);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const CompanionCard(name: trustedContactName),
-                    const SizedBox(height: 14),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      onPressed: () {
-                        showPendingDialog(
-                          context,
-                          'Aquí podrás compartir tu viaje en tiempo real con $trustedContactName.',
-                        );
-                      },
-                      icon: const Icon(Icons.share_location_rounded),
-                      label: const Text('Compartir viaje'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
-                        foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      onPressed: () {
-                        showPendingDialog(
-                          context,
-                          'El aviso de ayuda a $trustedContactName estará disponible próximamente.',
-                        );
-                      },
-                      child: const Text('Necesito ayuda'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Finalizar SafeWalk'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+      appBar: AppBar(title: const Text('Tu trayecto')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            destination?.title ?? 'Sin destino seleccionado',
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
-        ),
+          Text(destination?.subtitle ?? ''),
+          const SizedBox(height: 24),
+          Container(
+            height: 240,
+            alignment: Alignment.center,
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            child: const Text(
+              'Mapa y seguimiento GPS pendientes de integrar.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: Text(contact?.name ?? 'Sin contacto principal'),
+            subtitle: Text(
+              contact?.phone ?? 'Selecciona un contacto en tu perfil.',
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: contact == null
+                ? null
+                : () => showPendingDialog(
+                    context,
+                    'Compartir la ubicación en tiempo real está pendiente de integrar.',
+                  ),
+            icon: const Icon(Icons.share_location),
+            label: const Text('Compartir viaje'),
+          ),
+          TextButton(
+            onPressed: contact == null
+                ? null
+                : () => showPendingDialog(
+                    context,
+                    'El envío de ayuda a ${contact.name} está pendiente de integrar.',
+                  ),
+            child: const Text('Necesito ayuda'),
+          ),
+          OutlinedButton(
+            onPressed: contact == null
+                ? null
+                : () => showOffRouteDialog(context, contact.name),
+            child: const Text('Simular fuera de ruta'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Volver al inicio'),
+          ),
+        ],
       ),
     );
   }

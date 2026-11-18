@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/app_settings.dart';
 import '../providers/user_provider.dart';
+import '../providers/account_provider.dart';
 import '../widgets/brand_mark.dart';
 import '../widgets/pending_dialog.dart';
 import '../widgets/settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+  Future<void> _savePreference(
+    BuildContext context,
+    AccountProvider account,
+    String key,
+    bool value,
+  ) async {
+    try {
+      await account.setPreference(key, value);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar la preferencia.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final settings = SettingsScope.of(context);
+    final account = context.watch<AccountProvider>();
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
@@ -56,14 +73,15 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   SwitchListTile(
                     secondary: Icon(
-                      settings.darkMode
+                      account.darkMode
                           ? Icons.dark_mode_outlined
                           : Icons.light_mode_outlined,
                     ),
                     title: const Text('Modo oscuro'),
                     subtitle: const Text('Cambia la apariencia de toda la app'),
-                    value: settings.darkMode,
-                    onChanged: settings.setDarkMode,
+                    value: account.darkMode,
+                    onChanged: (value) =>
+                        _savePreference(context, account, 'darkMode', value),
                   ),
                 ],
               ),
@@ -76,12 +94,12 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: const Text(
                       'Preferencia de avisos de tus trayectos',
                     ),
-                    value: settings.notifications,
+                    value: account.notifications,
                     onChanged: (value) {
-                      settings.setNotifications(value);
+                      _savePreference(context, account, 'notifications', value);
                       showPendingDialog(
                         context,
-                        'La preferencia cambia en esta sesión. Más adelante se enviarán notificaciones reales de tus trayectos. Funcionalidad pendiente.',
+                        'La preferencia se guarda en tu cuenta. Más adelante se enviarán notificaciones reales de tus trayectos. Funcionalidad pendiente.',
                       );
                     },
                   ),
@@ -90,12 +108,17 @@ class SettingsScreen extends StatelessWidget {
                     secondary: const Icon(Icons.schedule_rounded),
                     title: const Text('Recordatorios'),
                     subtitle: const Text('Recuerda avisar cuando llegues'),
-                    value: settings.journeyReminders,
+                    value: account.journeyReminders,
                     onChanged: (value) {
-                      settings.setJourneyReminders(value);
+                      _savePreference(
+                        context,
+                        account,
+                        'journeyReminders',
+                        value,
+                      );
                       showPendingDialog(
                         context,
-                        'La preferencia cambia en esta sesión. Aquí se programarán recordatorios de llegada. Funcionalidad pendiente.',
+                        'La preferencia se guarda en tu cuenta. Aquí se programarán recordatorios de llegada. Funcionalidad pendiente.',
                       );
                     },
                   ),
@@ -107,7 +130,10 @@ class SettingsScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.people_outline_rounded),
                     title: const Text('Contacto de confianza'),
-                    subtitle: const Text('María · Disponible'),
+                    subtitle: Text(
+                      account.primaryContact?.name ??
+                          'Elegir contacto principal',
+                    ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => Navigator.pushNamed(context, '/contacts'),
                   ),
@@ -190,7 +216,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Las preferencias se conservan mientras la app está abierta.',
+                'Tus preferencias se guardan en tu cuenta de Firebase.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
               ),

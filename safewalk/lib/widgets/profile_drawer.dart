@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/user_provider.dart';
+import '../providers/account_provider.dart';
 import 'brand_mark.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
   @override
   Widget build(BuildContext context) {
-    final name = context.watch<UserProvider>().displayName;
+    final name = context.watch<AccountProvider>().displayName;
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: SafeArea(
@@ -26,7 +26,7 @@ class ProfileDrawer extends StatelessWidget {
                     radius: 30,
                     backgroundColor: const Color(0xFF365DD8),
                     child: Text(
-                      name.substring(0, 1).toUpperCase(),
+                      name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
