@@ -20,14 +20,14 @@ class TripHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'SafeWalk activo',
+                  'Tu trayecto',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
                 ),
-                Text('Todo está bien'),
+                Text('Seguimiento pendiente'),
               ],
             ),
           ),
@@ -35,9 +35,9 @@ class TripHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Llegarás aprox.'),
+                Text('Tiempo estimado'),
                 Text(
-                  '11:04 PM',
+                  'Sin calcular',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ],

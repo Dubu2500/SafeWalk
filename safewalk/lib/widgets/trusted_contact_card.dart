@@ -86,7 +86,7 @@ class TrustedContactCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$name · Lista para acompañarte',
+                        name,
                         style: const TextStyle(
                           fontSize: 14,
                           height: 1.5,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/user_provider.dart';
+import 'widgets/account_gate.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -14,6 +15,6 @@ class AuthGate extends StatelessWidget {
     if (!isLoggedIn) {
       return const LoginScreen();
     }
-    return const HomeScreen();
+    return const AccountGate(child: HomeScreen());
   }
 }
