@@ -150,24 +150,25 @@ class _MapScreenState extends State<MapScreen> {
       throw Exception('SafeWalk necesita permiso de ubicación.');
     }
     return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      ),
     );
   }
 
   void _listenToPosition() {
     _positionSubscription?.cancel();
-    _positionSubscription =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10,
-          ),
-        ).listen((position) {
-          if (!mounted) return;
-          final location = LatLng(position.latitude, position.longitude);
-          setState(() => _myLocation = location);
-          _checkProgress(location);
-        });
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((position) {
+      if (!mounted) return;
+      final location = LatLng(position.latitude, position.longitude);
+      setState(() => _myLocation = location);
+      _checkProgress(location);
+    });
   }
 
   void _checkProgress(LatLng location) {
@@ -398,7 +399,9 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         const RichAttributionWidget(
                           attributions: [
-                            TextSourceAttribution('OpenStreetMap contributors'),
+                            TextSourceAttribution(
+                              'OpenStreetMap contributors',
+                            ),
                           ],
                         ),
                       ],
