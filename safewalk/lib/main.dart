@@ -6,6 +6,7 @@ import 'auth_gate.dart';
 import 'firebase_options.dart';
 import 'providers/user_provider.dart';
 import 'providers/account_provider.dart';
+import 'providers/photo_provider.dart';
 import 'widgets/account_gate.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
@@ -24,6 +25,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(
           create: (context) => AccountProvider(context.read<UserProvider>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => PhotoProvider(context.read<UserProvider>()),
         ),
       ],
       child: const MyApp(),

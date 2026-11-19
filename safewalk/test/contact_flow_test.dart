@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:safewalk/main.dart';
 import 'package:safewalk/providers/account_provider.dart';
+import 'package:safewalk/providers/photo_provider.dart';
 import 'package:safewalk/providers/user_provider.dart';
 import 'package:safewalk/services/account_repository.dart';
 
@@ -24,11 +27,16 @@ void main() {
     );
     final user = UserProvider(repository: repository, auth: auth);
     final account = AccountProvider(user, repository: repository);
+    final photos = PhotoProvider(
+      user,
+      baseDir: () async => Directory.systemTemp.createTemp('safewalk_flow'),
+    );
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<UserProvider>.value(value: user),
           ChangeNotifierProvider<AccountProvider>.value(value: account),
+          ChangeNotifierProvider<PhotoProvider>.value(value: photos),
         ],
         child: const MyApp(),
       ),
