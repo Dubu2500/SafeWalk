@@ -8,6 +8,7 @@ import 'models/app_settings.dart';
 import 'providers/user_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/pick_destination_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
@@ -59,6 +60,7 @@ class _MyAppState extends State<MyApp> {
           '/register': (_) => const RegisterScreen(),
           '/home': (_) => const HomeScreen(),
           '/map': (_) => const MapScreen(),
+          '/pick-destination': (_) => const PickDestinationScreen(),
           '/settings': (_) => const SettingsScreen(),
           '/profile': (_) => const ProfileScreen(),
           '/contacts': (_) => const TrustedContactsScreen(),

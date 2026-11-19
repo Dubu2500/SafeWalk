@@ -7,6 +7,8 @@ class Destination {
     required this.subtitle,
     required this.emoji,
     required this.kind,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
@@ -14,4 +16,8 @@ class Destination {
   final String subtitle;
   final String emoji;
   final DestinationKind kind;
+  final double? latitude;
+  final double? longitude;
+
+  bool get hasLocation => latitude != null && longitude != null;
 }

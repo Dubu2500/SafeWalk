@@ -11,6 +11,8 @@ const destinations = [
     subtitle: 'Calle Serrano 42',
     emoji: '🏠',
     kind: DestinationKind.home,
+    latitude: 20.6767,
+    longitude: -103.3475,
   ),
   Destination(
     id: 'map',
@@ -25,5 +27,7 @@ const destinations = [
     subtitle: 'Centro Comercial Moda',
     emoji: '🕘',
     kind: DestinationKind.recent,
+    latitude: 20.6738,
+    longitude: -103.3870,
   ),
 ];

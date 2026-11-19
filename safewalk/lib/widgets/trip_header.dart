@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class TripHeader extends StatelessWidget {
-  const TripHeader({super.key});
+  const TripHeader({super.key, this.arrival});
+
+  final String? arrival;
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +15,9 @@ class TripHeader extends StatelessWidget {
         20,
         16,
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -35,10 +37,13 @@ class TripHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Llegarás aprox.'),
+                const Text('Llegarás aprox.'),
                 Text(
-                  '11:04 PM',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  arrival ?? '--:--',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),

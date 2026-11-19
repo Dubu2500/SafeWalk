@@ -7,7 +7,6 @@ import '../providers/user_provider.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/trusted_contact_card.dart';
 import '../widgets/profile_drawer.dart';
-import '../widgets/pending_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,18 +16,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final List<Destination> _destinations = [...destinations];
   Destination _selectedDestination = destinations.first;
   String _query = '';
 
-  void _showNotice(String message) {
-    showPendingDialog(context, '$message Funcionalidad pendiente.');
+  Future<void> _pickDestination() async {
+    final picked = await Navigator.pushNamed(context, '/pick-destination');
+    if (!mounted || picked is! Destination) return;
+    setState(() {
+      final index = _destinations.indexWhere((d) => d.id == picked.id);
+      if (index == -1) {
+        _destinations.add(picked);
+      } else {
+        _destinations[index] = picked;
+      }
+      _selectedDestination = picked;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final name = context.watch<UserProvider>().displayName;
     final query = _query.trim().toLowerCase();
-    final visibleDestinations = destinations.where(
+    final visibleDestinations = _destinations.where(
       (destination) => '${destination.title} ${destination.subtitle}'
           .toLowerCase()
           .contains(query),
@@ -151,9 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         FocusScope.of(context).unfocus();
                         if (destination.kind == DestinationKind.map) {
-                          _showNotice(
-                            'La selección en el mapa estará disponible próximamente.',
-                          );
+                          _pickDestination();
                           return;
                         }
                         setState(() => _selectedDestination = destination);
@@ -191,7 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pushNamed(context, '/map'),
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        '/map',
+                        arguments: _selectedDestination,
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
