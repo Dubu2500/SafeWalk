@@ -150,7 +150,7 @@ class SettingsScreen extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                         child: Text(
-                          'SafeWalk está diseñado para compartir tu ubicación solo durante un trayecto activo. Esta demo no accede al GPS ni comparte datos. La integración del mapa y seguimiento en tiempo real está pendiente.',
+                          'SafeWalk usa tu ubicación solo durante un trayecto activo para mostrar tu ruta en el mapa. Tu ubicación solo se envía a tu contacto cuando tú lo eliges con "Compartir viaje" o "Necesito ayuda".',
                           style: TextStyle(
                             height: 1.5,
                             color: colors.onSurfaceVariant,
