@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'pending_dialog.dart';
-
-Future<void> showOffRouteDialog(BuildContext context, String contactName) {
-  return showDialog<void>(
+Future<bool> showOffRouteDialog(
+  BuildContext context,
+  String contactName,
+) async {
+  final needsHelp = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (dialogContext) => AlertDialog(
@@ -15,25 +16,18 @@ Future<void> showOffRouteDialog(BuildContext context, String contactName) {
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            Navigator.pop(dialogContext);
-            showPendingDialog(
-              context,
-              'El aviso de ayuda a $contactName estará disponible próximamente.',
-            );
-          },
+          onPressed: () => Navigator.pop(dialogContext, true),
           child: const Text(
             'Necesito ayuda',
             style: TextStyle(color: Colors.red),
           ),
         ),
         FilledButton(
-          onPressed: () {
-            Navigator.pop(dialogContext);
-          },
+          onPressed: () => Navigator.pop(dialogContext, false),
           child: const Text('Sí, estoy bien'),
         ),
       ],
     ),
   );
+  return needsHelp ?? false;
 }

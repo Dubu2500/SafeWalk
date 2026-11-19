@@ -49,7 +49,17 @@ service cloud.firestore {
           && request.resource.data.address.size() > 0 && request.resource.data.address.size() <= 300;
       }
       // Journey tracking is a separate feature. This change only reads its data.
-      match /trips/{tripId} { allow read: if owner(uid); }
+      match /trips/{tripId} {
+        allow read: if owner(uid);
+        allow create: if owner(uid)
+          && request.resource.data.keys().hasOnly(['destination', 'status', 'arrived', 'startedAt', 'endedAt'])
+          && request.resource.data.destination is string
+          && request.resource.data.destination.size() <= 100
+          && request.resource.data.status == 'completed'
+          && request.resource.data.arrived is bool
+          && request.resource.data.startedAt is timestamp
+          && request.resource.data.endedAt == request.time;
+      }
     }
   }
 }

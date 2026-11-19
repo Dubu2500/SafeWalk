@@ -5,15 +5,18 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/destination.dart';
+import '../models/trusted_contact.dart';
 import '../providers/account_provider.dart';
 import '../services/geocoding_service.dart';
 import '../services/route_service.dart';
+import '../services/trip_service.dart';
 import '../widgets/safewalk_tile_layer.dart';
 import '../widgets/friend_card.dart';
+import '../widgets/help_sheet.dart';
 import '../widgets/off_route.dart';
-import '../widgets/pending_dialog.dart';
 import '../widgets/trip_header.dart';
 
 class MapScreen extends StatefulWidget {
@@ -39,6 +42,9 @@ class _MapScreenState extends State<MapScreen> {
   Destination? _destination;
   LatLng? _destinationPoint;
   String _contactName = 'Tu contacto';
+  TrustedContact? _contact;
+  final _startedAt = DateTime.now();
+  bool _finishing = false;
   bool _started = false;
   LatLng? _myLocation;
   WalkingRoute? _route;
@@ -57,7 +63,8 @@ class _MapScreenState extends State<MapScreen> {
     _started = true;
     final account = context.read<AccountProvider>();
     _destination = account.selectedDestination;
-    _contactName = account.primaryContact?.name ?? _contactName;
+    _contact = account.primaryContact;
+    _contactName = _contact?.name ?? _contactName;
     _start();
   }
 
@@ -143,25 +150,24 @@ class _MapScreenState extends State<MapScreen> {
       throw Exception('SafeWalk necesita permiso de ubicación.');
     }
     return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
   }
 
   void _listenToPosition() {
     _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((position) {
-      if (!mounted) return;
-      final location = LatLng(position.latitude, position.longitude);
-      setState(() => _myLocation = location);
-      _checkProgress(location);
-    });
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((position) {
+          if (!mounted) return;
+          final location = LatLng(position.latitude, position.longitude);
+          setState(() => _myLocation = location);
+          _checkProgress(location);
+        });
   }
 
   void _checkProgress(LatLng location) {
@@ -191,7 +197,10 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _handleOffRoute() async {
     if (_alertOpen) return;
     _alertOpen = true;
-    await showOffRouteDialog(context, _contactName);
+    final needsHelp = await showOffRouteDialog(context, _contactName);
+    if (needsHelp && mounted) {
+      await showHelpSheet(context, contact: _contact, location: _myLocation);
+    }
     _alertOpen = false;
     _offRouteCount = 0;
     if (mounted) await _recalculate();
@@ -239,6 +248,17 @@ class _MapScreenState extends State<MapScreen> {
           'Le avisaremos a $_contactName que estás bien.',
         ),
         actions: [
+          if (_contact != null)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                sendSms(
+                  _contact!.phone,
+                  'Ya llegué a ${_destination?.title ?? 'mi destino'}, estoy bien.',
+                );
+              },
+              child: Text('Avisar a $_contactName'),
+            ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Finalizar SafeWalk'),
@@ -246,7 +266,45 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
+    await _finish(arrived: true);
+  }
+
+  Future<void> _finish({required bool arrived}) async {
+    if (_finishing) return;
+    setState(() => _finishing = true);
+    final account = context.read<AccountProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await TripService(firestore: account.repository.db).saveTrip(
+        account.uid,
+        destination: _destination?.title ?? 'Destino',
+        startedAt: _startedAt,
+        arrived: arrived,
+      );
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Trayecto guardado.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo guardar el trayecto.')),
+      );
+    }
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _shareTrip() async {
+    final location = _myLocation;
+    final arrival = _arrivalTime;
+    final text = StringBuffer(
+      'Voy camino a ${_destination?.title ?? 'mi destino'} con SafeWalk.',
+    );
+    if (arrival != null) text.write(' Llego aprox. a las $arrival.');
+    if (location != null) {
+      text.write(' Mi ubicación: ${TripService.mapLink(location)}');
+    }
+    await SharePlus.instance.share(
+      ShareParams(text: text.toString(), subject: 'Mi trayecto en SafeWalk'),
+    );
   }
 
   void _centerOnMe() {
@@ -340,9 +398,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         const RichAttributionWidget(
                           attributions: [
-                            TextSourceAttribution(
-                              'OpenStreetMap contributors',
-                            ),
+                            TextSourceAttribution('OpenStreetMap contributors'),
                           ],
                         ),
                       ],
@@ -427,12 +483,7 @@ class _MapScreenState extends State<MapScreen> {
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed: () {
-                        showPendingDialog(
-                          context,
-                          'Aquí podrás compartir tu viaje en tiempo real con $_contactName.',
-                        );
-                      },
+                      onPressed: _shareTrip,
                       icon: const Icon(Icons.share_location_rounded),
                       label: const Text('Compartir viaje'),
                     ),
@@ -443,12 +494,11 @@ class _MapScreenState extends State<MapScreen> {
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed: () {
-                        showPendingDialog(
-                          context,
-                          'El aviso de ayuda a $_contactName estará disponible próximamente.',
-                        );
-                      },
+                      onPressed: () => showHelpSheet(
+                        context,
+                        contact: _contact,
+                        location: _myLocation,
+                      ),
                       child: const Text('Necesito ayuda'),
                     ),
                     const SizedBox(height: 12),
@@ -456,9 +506,9 @@ class _MapScreenState extends State<MapScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                      onPressed: _finishing
+                          ? null
+                          : () => _finish(arrived: false),
                       child: const Text('Finalizar SafeWalk'),
                     ),
                   ],
