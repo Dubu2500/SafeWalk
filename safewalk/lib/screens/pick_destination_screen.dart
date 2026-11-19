@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../models/destination.dart';
 import '../services/geocoding_service.dart';
+import '../widgets/safewalk_tile_layer.dart';
 
 class PickDestinationScreen extends StatefulWidget {
   const PickDestinationScreen({super.key});
@@ -18,6 +19,7 @@ class _PickDestinationScreenState extends State<PickDestinationScreen> {
   static const _fallbackCenter = LatLng(20.6767, -103.3475);
 
   final _mapController = MapController();
+  final _tileLayer = buildSafeWalkTileLayer();
   final _search = TextEditingController();
 
   LatLng? _myLocation;
@@ -158,10 +160,7 @@ class _PickDestinationScreenState extends State<PickDestinationScreen> {
               onTap: (_, point) => _selectPoint(point),
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.safewalk',
-              ),
+              _tileLayer,
               MarkerLayer(
                 markers: [
                   if (_myLocation != null)
@@ -284,6 +283,12 @@ class _PickDestinationScreenState extends State<PickDestinationScreen> {
                   ),
               ],
             ),
+          ),
+          const Positioned(
+            left: 16,
+            right: 16,
+            bottom: 170,
+            child: MapTileErrorBanner(),
           ),
           Positioned(
             left: 16,

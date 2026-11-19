@@ -10,6 +10,7 @@ import '../models/destination.dart';
 import '../providers/account_provider.dart';
 import '../services/geocoding_service.dart';
 import '../services/route_service.dart';
+import '../widgets/safewalk_tile_layer.dart';
 import '../widgets/friend_card.dart';
 import '../widgets/off_route.dart';
 import '../widgets/pending_dialog.dart';
@@ -32,6 +33,7 @@ class _MapScreenState extends State<MapScreen> {
   static const _offRouteReadings = 3;
 
   final _mapController = MapController();
+  final _tileLayer = buildSafeWalkTileLayer();
   StreamSubscription<Position>? _positionSubscription;
 
   Destination? _destination;
@@ -293,11 +295,7 @@ class _MapScreenState extends State<MapScreen> {
                         },
                       ),
                       children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.safewalk',
-                        ),
+                        _tileLayer,
                         if (route != null)
                           PolylineLayer(
                             polylines: [
@@ -348,6 +346,12 @@ class _MapScreenState extends State<MapScreen> {
                           ],
                         ),
                       ],
+                    ),
+                    const Positioned(
+                      left: 12,
+                      right: 12,
+                      top: 60,
+                      child: MapTileErrorBanner(),
                     ),
                     if (_loading || _recalculating)
                       Container(
