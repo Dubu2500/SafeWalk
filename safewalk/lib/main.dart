@@ -9,6 +9,7 @@ import 'providers/account_provider.dart';
 import 'widgets/account_gate.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/pick_destination_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
         '/register': (_) => const RegisterScreen(),
         '/home': (_) => const AccountGate(child: HomeScreen()),
         '/map': (_) => const AccountGate(child: MapScreen()),
+        '/pick-destination': (_) => const PickDestinationScreen(),
         '/settings': (_) => const AccountGate(child: SettingsScreen()),
         '/profile': (_) => const AccountGate(child: ProfileScreen()),
         '/contacts': (_) => const AccountGate(child: TrustedContactsScreen()),

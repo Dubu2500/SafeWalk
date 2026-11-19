@@ -213,14 +213,19 @@ class AccountProvider extends ChangeNotifier {
 
   Future<void> deleteContact(String id) => repository.deleteContact(uid, id);
   Future<void> setPrimary(String id) => repository.setPrimary(uid, id);
-  Future<void> addDestination(String title, String address) {
+  Future<void> addDestination(
+    String title,
+    String address, {
+    double? lat,
+    double? lng,
+  }) {
     if (title.trim().isEmpty ||
         title.trim().length > 100 ||
         address.trim().isEmpty ||
         address.trim().length > 300) {
       throw ArgumentError('Escribe el nombre y dirección del destino.');
     }
-    return repository.addDestination(uid, title, address);
+    return repository.addDestination(uid, title, address, lat: lat, lng: lng);
   }
 
   void selectDestination(String id) {
