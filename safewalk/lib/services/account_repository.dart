@@ -50,6 +50,9 @@ class AccountRepository {
     'updatedAt': FieldValue.serverTimestamp(),
   });
 
+  Future<void> saveDeviceToken(String uid, String token) => user(uid)
+      .update({'fcmToken': token, 'updatedAt': FieldValue.serverTimestamp()});
+
   Future<void> saveContact(String uid, TrustedContact contact) async {
     final collection = user(uid).collection('contacts');
     final ref = contact.id.isEmpty

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/account_provider.dart';
+import '../providers/device_token_provider.dart';
 import '../widgets/password_reset_dialog.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/terms_dialog.dart';
@@ -45,6 +47,23 @@ class HelpScreen extends StatelessWidget {
       const SnackBar(
         content: Text('Te enviamos un correo para cambiar tu contraseña.'),
       ),
+    );
+  }
+
+  Future<void> _copyToken(BuildContext context) async {
+    final token = context.read<DeviceTokenProvider>().token;
+    final messenger = ScaffoldMessenger.of(context);
+    if (token == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Este dispositivo no tiene token de notificaciones.'),
+        ),
+      );
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: token));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Token copiado al portapapeles.')),
     );
   }
 
@@ -115,6 +134,14 @@ class HelpScreen extends StatelessWidget {
                     subtitle: const Text('Te enviamos un enlace a tu correo'),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => _resetPassword(context),
+                  ),
+                  const Divider(height: 1, indent: 20, endIndent: 20),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_active_outlined),
+                    title: const Text('Token de notificaciones'),
+                    subtitle: const Text('Cópialo para enviar una prueba'),
+                    trailing: const Icon(Icons.copy_rounded),
+                    onTap: () => _copyToken(context),
                   ),
                   const Divider(height: 1, indent: 20, endIndent: 20),
                   ListTile(
