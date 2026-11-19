@@ -79,9 +79,18 @@ class AccountRepository {
         }
       });
 
-  Future<void> addDestination(String uid, String title, String address) async {
-    await user(uid)
-        .collection('destinations')
-        .add({'title': title.trim(), 'address': address.trim()});
+  Future<void> addDestination(
+    String uid,
+    String title,
+    String address, {
+    double? lat,
+    double? lng,
+  }) async {
+    await user(uid).collection('destinations').add({
+      'title': title.trim(),
+      'address': address.trim(),
+      if (lat != null && lng != null) 'lat': lat,
+      if (lat != null && lng != null) 'lng': lng,
+    });
   }
 }

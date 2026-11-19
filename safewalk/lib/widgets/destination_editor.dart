@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/destination.dart';
 import '../providers/account_provider.dart';
+import '../services/geocoding_service.dart';
 
 class DestinationEditor extends StatefulWidget {
   const DestinationEditor({super.key});
@@ -15,11 +17,24 @@ class _DestinationEditorState extends State<DestinationEditor> {
   final _address = TextEditingController();
   bool _saving = false;
   String? _error;
+  // Coordenadas del destino (si se eligió en el mapa).
+  double? _lat;
+  double? _lng;
   @override
   void dispose() {
     _title.dispose();
     _address.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickOnMap() async {
+    final picked = await Navigator.pushNamed(context, '/pick-destination');
+    if (!mounted || picked is! Destination) return;
+    setState(() {
+      _address.text = picked.subtitle;
+      _lat = picked.latitude;
+      _lng = picked.longitude;
+    });
   }
 
   Future<void> _save() async {
@@ -29,9 +44,24 @@ class _DestinationEditorState extends State<DestinationEditor> {
       _error = null;
     });
     try {
-      await context.read<AccountProvider>().addDestination(
+      final account = context.read<AccountProvider>();
+      // Si escribió la dirección a mano, se buscan sus coordenadas.
+      if (_lat == null || _lng == null) {
+        try {
+          final places = await GeocodingService.search(_address.text);
+          if (places.isNotEmpty) {
+            _lat = places.first.point.latitude;
+            _lng = places.first.point.longitude;
+          }
+        } catch (_) {
+          // Se guarda sin coordenadas; el mapa intentará buscarlas después.
+        }
+      }
+      await account.addDestination(
         _title.text,
         _address.text,
+        lat: _lat,
+        lng: _lng,
       );
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -68,9 +98,21 @@ class _DestinationEditorState extends State<DestinationEditor> {
                 enabled: !_saving,
                 maxLength: 300,
                 decoration: const InputDecoration(labelText: 'Dirección'),
+                onChanged: (_) {
+                  _lat = null;
+                  _lng = null;
+                },
                 validator: (v) => v == null || v.trim().isEmpty
                     ? 'Escribe una dirección.'
                     : null,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _saving ? null : _pickOnMap,
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('Elegir en el mapa'),
+                ),
               ),
               if (_error != null) Text(_error!),
             ],
