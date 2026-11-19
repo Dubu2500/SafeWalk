@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/account_provider.dart';
-import '../widgets/pending_dialog.dart';
+import '../providers/photo_provider.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_info_tile.dart';
@@ -74,6 +74,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickPhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final changed = await context.read<PhotoProvider>().pickFromGallery();
+      if (changed) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Foto de perfil actualizada.')),
+        );
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir la galería. Revisa los permisos.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<PhotoProvider>().removePhoto();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Foto de perfil eliminada.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo quitar la foto.')),
+      );
+    }
+  }
+
+  void _showPhotoOptions() {
+    final hasPhoto = context.read<PhotoProvider>().photo != null;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Elegir de la galería'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _pickPhoto();
+              },
+            ),
+            if (hasPhoto)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('Quitar foto'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _removePhoto();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final account = context.watch<AccountProvider>();
@@ -96,10 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ProfileHeader(
                   name: profile.name,
                   email: profile.email,
-                  onPhotoTap: () => showPendingDialog(
-                    context,
-                    'Aquí podrás tomar o elegir una foto de perfil. Funcionalidad pendiente.',
-                  ),
+                  onPhotoTap: _showPhotoOptions,
                 ),
                 const SizedBox(height: 24),
                 Row(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'profile_avatar.dart';
+
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
@@ -17,24 +19,9 @@ class ProfileHeader extends StatelessWidget {
       children: [
         Stack(
           children: [
-            Container(
-              width: 96,
-              height: 96,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF2C408F), Color(0xFF4C7AE0)],
-                ),
-              ),
-              child: Text(
-                name.isEmpty ? '?' : name.substring(0, 1),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 38,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            GestureDetector(
+              onTap: onPhotoTap,
+              child: ProfileAvatar(name: name, size: 96),
             ),
             Positioned(
               right: 0,

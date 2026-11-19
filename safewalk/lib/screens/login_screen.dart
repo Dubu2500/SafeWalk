@@ -8,7 +8,7 @@ import '../providers/user_provider.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/form_error_text.dart';
-import '../widgets/pending_dialog.dart';
+import '../widgets/password_reset_dialog.dart';
 import '../widgets/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -80,6 +80,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    FocusScope.of(context).unfocus();
+    final sent = await showPasswordResetDialog(context, _email.text);
+    if (!sent || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Te enviamos un correo para restablecer tu contraseña. Revisa también spam.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => AuthLayout(
     title: 'Qué bueno verte\nde nuevo.',
@@ -112,10 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Align(
         alignment: Alignment.centerRight,
         child: TextButton(
-          onPressed: () => showPendingDialog(
-            context,
-            'La recuperación de contraseña estará disponible próximamente.',
-          ),
+          onPressed: _resetPassword,
           child: const Text('¿Olvidaste tu contraseña?'),
         ),
       ),

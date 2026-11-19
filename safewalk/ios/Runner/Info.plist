@@ -6,6 +6,8 @@
 	<string>SafeWalk usa tu ubicación para mostrar tu ruta durante el trayecto.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se necesita acceso a la fototeca para elegir tu foto de perfil.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

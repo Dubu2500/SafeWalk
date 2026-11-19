@@ -42,6 +42,9 @@ class UserProvider extends ChangeNotifier {
     await _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
+  Future<void> sendPasswordReset(String email) =>
+      _auth.sendPasswordResetEmail(email: email.trim());
+
   Future<void> register({
     required String name,
     required String email,

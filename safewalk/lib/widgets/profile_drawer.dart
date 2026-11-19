@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/account_provider.dart';
 import 'brand_mark.dart';
+import 'profile_avatar.dart';
 
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
@@ -22,18 +23,7 @@ class ProfileDrawer extends StatelessWidget {
                 children: [
                   const BrandMark(size: 52),
                   const SizedBox(height: 28),
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: const Color(0xFF365DD8),
-                    child: Text(
-                      name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  ProfileAvatar(name: name, size: 60),
                   const SizedBox(height: 16),
                   Text(
                     name,
