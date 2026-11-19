@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-import '../config/api_keys.dart';
+import '../config/app_config.dart';
 
 class PlaceResult {
   const PlaceResult({required this.label, required this.point});
@@ -18,7 +18,7 @@ class GeocodingService {
   static Future<List<PlaceResult>> search(String text, {LatLng? near}) async {
     final uri = Uri.parse('$_baseUrl/search').replace(
       queryParameters: {
-        'api_key': orsApiKey,
+        'api_key': AppConfig.orsApiKey,
         'text': text,
         'boundary.country': 'MX',
         'size': '8',
@@ -32,7 +32,7 @@ class GeocodingService {
   static Future<String?> nameOf(LatLng point) async {
     final uri = Uri.parse('$_baseUrl/reverse').replace(
       queryParameters: {
-        'api_key': orsApiKey,
+        'api_key': AppConfig.orsApiKey,
         'point.lat': '${point.latitude}',
         'point.lon': '${point.longitude}',
         'size': '1',
@@ -43,10 +43,10 @@ class GeocodingService {
   }
 
   static Future<Map<String, dynamic>> _get(Uri uri) async {
-    final response = await http.get(
-      uri,
-      headers: {'Authorization': orsApiKey},
-    );
+    AppConfig.requireRouteKey();
+    final response = await http
+        .get(uri, headers: {'Authorization': AppConfig.orsApiKey})
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
       throw Exception('No se pudo buscar el lugar (${response.statusCode}).');
     }

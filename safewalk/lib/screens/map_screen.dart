@@ -13,6 +13,8 @@ import '../providers/account_provider.dart';
 import '../services/geocoding_service.dart';
 import '../services/route_service.dart';
 import '../services/trip_service.dart';
+import '../services/live_trip_service.dart';
+import '../services/journey_reminder.dart';
 import '../widgets/safewalk_tile_layer.dart';
 import '../widgets/friend_card.dart';
 import '../widgets/help_sheet.dart';
@@ -27,6 +29,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  late final JourneyReminder _reminder = JourneyReminder(_showJourneyReminder);
+  LiveTripService? _live;
+  String? _liveId;
+  bool _sharingBusy = false;
+  Future<void> _liveWrites = Future<void>.value();
+  DateTime? _lastUpload;
   // Centro de Guadalajara, mientras se obtiene la ubicación real.
   static const _fallbackCenter = LatLng(20.6767, -103.3475);
   // Metros para considerar que llegaste o que te saliste de la ruta.
@@ -59,6 +67,10 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final currentAccount = context.watch<AccountProvider>();
+    _reminder.setEnabled(
+      _route != null && !_finishing && currentAccount.journeyReminders,
+    );
     if (_started) return;
     _started = true;
     final account = context.read<AccountProvider>();
@@ -71,6 +83,12 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _positionSubscription?.cancel();
+    _reminder.dispose();
+    final id = _liveId;
+    if (id != null) {
+      _liveId = null;
+      _enqueueLive(() => _live!.stop(id));
+    }
     super.dispose();
   }
 
@@ -128,6 +146,7 @@ class _MapScreenState extends State<MapScreen> {
       });
       _fitRoute();
       _listenToPosition();
+      _reminder.setEnabled(context.read<AccountProvider>().journeyReminders);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -150,25 +169,32 @@ class _MapScreenState extends State<MapScreen> {
       throw Exception('SafeWalk necesita permiso de ubicación.');
     }
     return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
   }
 
   void _listenToPosition() {
     _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((position) {
-      if (!mounted) return;
-      final location = LatLng(position.latitude, position.longitude);
-      setState(() => _myLocation = location);
-      _checkProgress(location);
-    });
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((position) {
+          if (!mounted) return;
+          final location = LatLng(position.latitude, position.longitude);
+          setState(() => _myLocation = location);
+          _checkProgress(location);
+          final id = _liveId;
+          final now = DateTime.now();
+          if (id != null &&
+              (_lastUpload == null ||
+                  now.difference(_lastUpload!) >= const Duration(seconds: 5))) {
+            _lastUpload = now;
+            _enqueueLive(() => _live!.position(id, location));
+          }
+        });
   }
 
   void _checkProgress(LatLng location) {
@@ -198,9 +224,20 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _handleOffRoute() async {
     if (_alertOpen) return;
     _alertOpen = true;
-    final needsHelp = await showOffRouteDialog(context, _contactName);
-    if (needsHelp && mounted) {
-      await showHelpSheet(context, contact: _contact, location: _myLocation);
+    final response = await showOffRouteDialog(
+      context,
+      _contactName,
+      sharing: _liveId != null,
+    );
+    if (!mounted) return;
+    final id = _liveId;
+    if (response != OffRouteResponse.safe) {
+      if (id != null) await _enqueueLive(() => _live!.alert(id, true));
+      if (mounted) {
+        await showHelpSheet(context, contact: _contact, location: _myLocation);
+      }
+    } else if (id != null) {
+      await _enqueueLive(() => _live!.alert(id, false));
     }
     _alertOpen = false;
     _offRouteCount = 0;
@@ -246,7 +283,7 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('¡Llegaste!'),
         content: Text(
           'Llegaste a ${_destination?.title ?? 'tu destino'}. '
-          'Le avisaremos a $_contactName que estás bien.',
+          'Puedes avisar a $_contactName antes de finalizar.',
         ),
         actions: [
           if (_contact != null)
@@ -273,9 +310,17 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _finish({required bool arrived}) async {
     if (_finishing) return;
     setState(() => _finishing = true);
+    _reminder.setEnabled(false);
     final account = context.read<AccountProvider>();
     final messenger = ScaffoldMessenger.of(context);
     try {
+      final id = _liveId;
+      if (id != null) {
+        if (!await _enqueueLive(() => _live!.stop(id))) {
+          throw StateError('sharing-stop');
+        }
+        _liveId = null;
+      }
       await TripService(firestore: account.repository.db).saveTrip(
         account.uid,
         destination: _destination?.title ?? 'Destino',
@@ -287,25 +332,148 @@ class _MapScreenState extends State<MapScreen> {
       );
     } catch (_) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No se pudo guardar el trayecto.')),
+        const SnackBar(
+          content: Text('No se pudo guardar el trayecto. Puedes reintentar.'),
+        ),
       );
+      if (mounted) setState(() => _finishing = false);
+      _reminder.setEnabled(account.journeyReminders);
+      return;
     }
     if (mounted) Navigator.pop(context);
   }
 
+  Future<bool> _enqueueLive(Future<void> Function() action) {
+    final operation = _liveWrites.then(
+      (_) => action().timeout(const Duration(seconds: 15)),
+    );
+    _liveWrites = operation.catchError((Object error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo actualizar el enlace. Revisa la conexión.',
+            ),
+          ),
+        );
+      }
+    });
+    return operation.then((_) => true, onError: (Object _) => false);
+  }
+
+  void _showJourneyReminder() {
+    if (!mounted ||
+        _finishing ||
+        _alertOpen ||
+        !context.read<AccountProvider>().journeyReminders) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 15),
+        content: const Text(
+          '¿Ya llegaste? Recuerda avisar a tu contacto y finalizar tu SafeWalk.',
+        ),
+        action: SnackBarAction(
+          label: 'Avisar',
+          onPressed: () async {
+            final contact = _contact;
+            if (contact != null) {
+              await sendSms(
+                contact.phone,
+                'Sigo mi trayecto con SafeWalk. Te avisaré al llegar.',
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestHelp() async {
+    final id = _liveId;
+    if (id != null) await _enqueueLive(() => _live!.alert(id, true));
+    if (mounted) {
+      await showHelpSheet(context, contact: _contact, location: _myLocation);
+    }
+  }
+
+  Future<void> _stopSharing() async {
+    final id = _liveId;
+    if (id == null || _sharingBusy) return;
+    setState(() => _sharingBusy = true);
+    final revoked = await _enqueueLive(() => _live!.revoke(id));
+    if (mounted) {
+      setState(() {
+        _sharingBusy = false;
+        if (revoked) _liveId = null;
+      });
+    }
+  }
+
   Future<void> _shareTrip() async {
     final location = _myLocation;
-    final arrival = _arrivalTime;
-    final text = StringBuffer(
-      'Voy camino a ${_destination?.title ?? 'mi destino'} con SafeWalk.',
-    );
-    if (arrival != null) text.write(' Llego aprox. a las $arrival.');
-    if (location != null) {
-      text.write(' Mi ubicación: ${TripService.mapLink(location)}');
+    if (location == null || _sharingBusy) return;
+    final account = context.read<AccountProvider>();
+    setState(() => _sharingBusy = true);
+    try {
+      _live ??= LiveTripService(firestore: account.repository.db);
+      if (_liveId == null) {
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Compartir ubicación en vivo'),
+            content: const Text(
+              'Quien tenga el enlace podrá ver tu ubicación y las alertas. Envíalo solo a tu contacto. Caduca en 4 horas; puedes detenerlo antes. El contacto debe mantener la página abierta para ver los avisos.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Crear enlace'),
+              ),
+            ],
+          ),
+        );
+        if (accepted != true || !mounted) return;
+        final id = _live!.newId();
+        await _live!
+            .start(id, account.uid, location)
+            .timeout(const Duration(seconds: 15));
+        if (!mounted) {
+          await _live!.revoke(id);
+          return;
+        }
+        setState(() => _liveId = id);
+      }
+      if (!mounted) return;
+      final box = context.findRenderObject() as RenderBox?;
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              'Sigue mi trayecto de SafeWalk en tiempo real: ${_live!.link(_liveId!)}',
+          subject: 'Mi trayecto en SafeWalk',
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo compartir. Revisa la configuración de Firebase Hosting y las reglas.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharingBusy = false);
     }
-    await SharePlus.instance.share(
-      ShareParams(text: text.toString(), subject: 'Mi trayecto en SafeWalk'),
-    );
   }
 
   void _centerOnMe() {
@@ -399,9 +567,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         const RichAttributionWidget(
                           attributions: [
-                            TextSourceAttribution(
-                              'OpenStreetMap contributors',
-                            ),
+                            TextSourceAttribution('OpenStreetMap contributors'),
                           ],
                         ),
                       ],
@@ -486,10 +652,21 @@ class _MapScreenState extends State<MapScreen> {
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed: _shareTrip,
+                      onPressed: _sharingBusy || _myLocation == null
+                          ? null
+                          : _shareTrip,
                       icon: const Icon(Icons.share_location_rounded),
-                      label: const Text('Compartir viaje'),
+                      label: Text(
+                        _liveId == null
+                            ? 'Compartir viaje'
+                            : 'Compartir enlace en vivo',
+                      ),
                     ),
+                    if (_liveId != null)
+                      TextButton(
+                        onPressed: _sharingBusy ? null : _stopSharing,
+                        child: const Text('Detener ubicación compartida'),
+                      ),
                     const SizedBox(height: 12),
                     TextButton(
                       style: TextButton.styleFrom(
@@ -497,11 +674,7 @@ class _MapScreenState extends State<MapScreen> {
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed: () => showHelpSheet(
-                        context,
-                        contact: _contact,
-                        location: _myLocation,
-                      ),
+                      onPressed: _requestHelp,
                       child: const Text('Necesito ayuda'),
                     ),
                     const SizedBox(height: 12),
