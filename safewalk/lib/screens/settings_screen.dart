@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/account_provider.dart';
 import '../widgets/brand_mark.dart';
-import '../widgets/pending_dialog.dart';
 import '../widgets/settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -13,10 +12,16 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     AccountProvider account,
     String key,
-    bool value,
-  ) async {
+    bool value, {
+    String? confirmation,
+  }) async {
     try {
       await account.setPreference(key, value);
+      if (confirmation != null && context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(confirmation)));
+      }
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,13 +100,15 @@ class SettingsScreen extends StatelessWidget {
                       'Preferencia de avisos de tus trayectos',
                     ),
                     value: account.notifications,
-                    onChanged: (value) {
-                      _savePreference(context, account, 'notifications', value);
-                      showPendingDialog(
-                        context,
-                        'La preferencia se guarda en tu cuenta. Más adelante se enviarán notificaciones reales de tus trayectos. Funcionalidad pendiente.',
-                      );
-                    },
+                    onChanged: (value) => _savePreference(
+                      context,
+                      account,
+                      'notifications',
+                      value,
+                      confirmation: value
+                          ? 'Notificaciones activadas.'
+                          : 'Notificaciones desactivadas.',
+                    ),
                   ),
                   const Divider(height: 1, indent: 20, endIndent: 20),
                   SwitchListTile(
@@ -109,18 +116,15 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('Recordatorios'),
                     subtitle: const Text('Recuerda avisar cuando llegues'),
                     value: account.journeyReminders,
-                    onChanged: (value) {
-                      _savePreference(
-                        context,
-                        account,
-                        'journeyReminders',
-                        value,
-                      );
-                      showPendingDialog(
-                        context,
-                        'La preferencia se guarda en tu cuenta. Aquí se programarán recordatorios de llegada. Funcionalidad pendiente.',
-                      );
-                    },
+                    onChanged: (value) => _savePreference(
+                      context,
+                      account,
+                      'journeyReminders',
+                      value,
+                      confirmation: value
+                          ? 'Recordatorios activados.'
+                          : 'Recordatorios desactivados.',
+                    ),
                   ),
                 ],
               ),
