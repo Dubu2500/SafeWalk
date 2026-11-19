@@ -114,7 +114,9 @@ class SettingsScreen extends StatelessWidget {
                   SwitchListTile(
                     secondary: const Icon(Icons.schedule_rounded),
                     title: const Text('Recordatorios'),
-                    subtitle: const Text('Recuerda avisar cuando llegues'),
+                    subtitle: const Text(
+                      'Aviso cada 10 minutos con el trayecto abierto',
+                    ),
                     value: account.journeyReminders,
                     onChanged: (value) => _savePreference(
                       context,

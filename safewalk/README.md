@@ -35,7 +35,7 @@ Google en Android requiere las huellas SHA de la aplicación registradas en Fire
 - Los perfiles de cuentas de Auth ya existentes se crean al iniciar sesión, usando su nombre, correo y fecha de creación reales. No se precargan contactos ni destinos ficticios.
 - Home y Contactos permiten deslizar hacia abajo para recargar desde el servidor. Las actualizaciones también llegan mediante listeners en tiempo real.
 
-Estructura:
+Estructura de los datos privados:
 
 ```text
 users/{uid}
@@ -43,7 +43,7 @@ users/{uid}
   preferences: { darkMode, notifications, journeyReminders }
   contacts/{contactId}: name, relationship, phone
   destinations/{destinationId}: title, address
-  trips/{tripId}: status (lectura; seguimiento pendiente)
+  trips/{tripId}: destination, status, arrived, startedAt, endedAt
 ```
 
 Las reglas restringen los datos al usuario autenticado dueño de cada ruta y validan los campos que se escriben. No se requieren índices compuestos.
@@ -80,6 +80,51 @@ Prueba manual con Firebase configurado:
 7. Iniciar sesión con otra cuenta: no debe mostrar los datos de la anterior.
 8. Comprobar en el simulador de reglas de Firebase que una cuenta no puede acceder a `users/{otroUid}` ni sus subcolecciones, y que un usuario sin sesión tampoco puede hacerlo.
 
-## Funcionalidades pendientes fuera de este cambio
+## Configuración de rutas y geocodificación
 
-Selección de foto desde galería, token de notificaciones del dispositivo, recuperación de contraseña, contenido de términos/soporte, mapa/GPS, seguimiento de trayectos y envío real de alertas. La pantalla de trayecto muestra el destino y contacto guardados; no presenta distancias, horas de llegada ni disponibilidad inventadas. El contador de trayectos lee los documentos completados de Firestore y es cero cuando no existen; esta versión aún no crea trayectos.
+La app compila sin archivos privados. Para usar las rutas se necesita una clave propia de OpenRouteService:
+
+1. Copiar `config.example.json` a `config.local.json` y completar `ORS_API_KEY`.
+2. Ejecutar `flutter run --dart-define-from-file=config.local.json`.
+
+`config.local.json` está excluido de Git. Las claves incluidas en una app móvil se pueden extraer de su binario; aplicar las restricciones/cuotas del proveedor. No se incluye una clave de terceros en el repositorio.
+
+Si falta la clave, se muestra un error de configuración al buscar rutas. Las peticiones tienen un tiempo límite de 20 segundos.
+
+## Seguimiento compartido y alertas
+
+La rama `ruben` incluye un visor web en `tracking/` para compartir el trayecto desde la app:
+
+1. Iniciar el trayecto y esperar la ubicación GPS.
+2. Tocar **Compartir viaje**, aceptar la explicación y enviar el enlace al contacto.
+3. El contacto abre el enlace en el navegador y lo mantiene abierto. Puede activar el sonido de alertas.
+4. Cada nueva lectura GPS (10 metros, con un máximo de una subida cada 5 segundos) actualiza el mismo documento; el visor lo escucha en tiempo real. Si no hay datos nuevos, muestra la antigüedad de la última posición.
+5. Al detectar un desvío, la app presenta una cuenta regresiva real de 20 segundos. **Sí, estoy bien** la cancela; **Necesito ayuda** o el vencimiento publican una alerta en el enlace, además de ofrecer SMS/llamada manual.
+6. **Detener ubicación compartida** revoca el enlace. Finalizar o salir del trayecto detiene las actualizaciones y bloquea la lectura de la sesión terminada. Cada enlace caduca en un máximo de 4 horas.
+
+El enlace es una credencial temporal: cualquier persona que lo reciba puede leer la ubicación mientras esté activo. Usa un identificador aleatorio de 256 bits en el fragmento de la URL. No permite listar sesiones ni contiene teléfono, correo o nombre del contacto. Las colecciones privadas `users/{uid}` siguen restringidas a su propietario.
+
+### Publicar el visor
+
+Se preparó la configuración; **no se han desplegado los cambios**. Antes de probar el enlace en otro teléfono:
+
+1. Habilitar Firebase Hosting estático en el proyecto `safewalk-fb1e9`. No requiere App Hosting ni Cloud Functions.
+2. Si el proyecto no tiene una app Web, registrarla en Configuración del proyecto; el visor usa `/__/firebase/init.json`, provisto por Hosting.
+3. Con Firebase CLI y una cuenta autorizada, desde esta carpeta:
+
+   ```bash
+   firebase deploy --only firestore:rules,hosting --project safewalk-fb1e9
+   ```
+
+4. Comprobar `https://safewalk-fb1e9.web.app/track`. Sin fragmento debe indicar que el enlace no es válido.
+5. Si se usa otro dominio, ajustar `TRACKING_BASE_URL` en `config.local.json` y reconstruir la app.
+
+El visor usa Firestore `onSnapshot` y los SDK oficiales de Firebase. La solución utiliza servicios con cuotas gratuitas de Spark. La lectura de ubicaciones mediante enlaces es una ampliación explícita del acceso: revisar las nuevas reglas antes de publicarlas.
+
+### Recordatorios y alcance
+
+**Recordatorios** ahora activa un aviso dentro de la app cada 10 minutos durante el trayecto. Su acción **Avisar** abre un SMS para confirmar al contacto que sigues en camino. Se cancela al desactivar la preferencia o terminar/salir del trayecto. El SMS requiere confirmación en la app del teléfono.
+
+Esta implementación funciona con el trayecto abierto y el visor del contacto abierto. No garantiza ejecución con la app cerrada o suspendida, ni envía SMS/push automáticamente en segundo plano. El código FCM existente permite recibir notificaciones, pero enviar push desde un servidor es una integración distinta. Ningún mensaje de ayuda se envía automáticamente al número de teléfono: la alerta automática se publica en el enlace que el usuario decidió compartir.
+
+Prueba de integración pendiente de credenciales y despliegue: usar dos dispositivos, compartir el enlace, caminar, comprobar cambios, simular un desvío y esperar los 20 segundos, responder antes del vencimiento en otra prueba, revocar el enlace, finalizar el trayecto y comprobar que ya no puede leerse. Probar también permisos denegados, pérdida de conexión y caducidad.
