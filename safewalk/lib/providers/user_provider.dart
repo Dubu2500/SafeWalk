@@ -4,13 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../data/home_data.dart';
+import '../services/account_repository.dart';
 
 const _googleServerClientId =
     '1019858631171-sljtknk8956vu76s3318ri846rclvnjh.apps.googleusercontent.com';
 
 class UserProvider extends ChangeNotifier {
-  UserProvider() {
+  UserProvider({AccountRepository? repository, FirebaseAuth? auth})
+    : _repository = repository ?? AccountRepository(),
+      _auth = auth ?? FirebaseAuth.instance {
     _user = _auth.currentUser;
     _subscription = _auth.userChanges().listen((user) {
       _user = user;
@@ -18,7 +20,8 @@ class UserProvider extends ChangeNotifier {
     });
   }
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AccountRepository _repository;
+  final FirebaseAuth _auth;
   StreamSubscription<User?>? _subscription;
   User? _user;
   bool _googleReady = false;
@@ -32,7 +35,7 @@ class UserProvider extends ChangeNotifier {
     if (name != null && name.isNotEmpty) return name;
     final email = _user?.email;
     if (email != null && email.isNotEmpty) return email.split('@').first;
-    return userName;
+    return 'Usuario';
   }
 
   Future<void> signIn({required String email, required String password}) async {
@@ -50,6 +53,7 @@ class UserProvider extends ChangeNotifier {
     );
     await credential.user?.updateDisplayName(name);
     await credential.user?.reload();
+    await _repository.ensureUser(credential.user!, name: name);
   }
 
   Future<bool> signInWithGoogle() async {

@@ -39,7 +39,7 @@ class TripHeader extends StatelessWidget {
               children: [
                 const Text('Llegarás aprox.'),
                 Text(
-                  arrival ?? '--:--',
+                  arrival ?? 'Sin calcular',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

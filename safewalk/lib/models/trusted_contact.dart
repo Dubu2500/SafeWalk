@@ -4,12 +4,18 @@ class TrustedContact {
     required this.name,
     required this.relationship,
     required this.phone,
-    this.available = true,
   });
-
-  final String id;
-  final String name;
-  final String relationship;
-  final String phone;
-  final bool available;
+  final String id, name, relationship, phone;
+  factory TrustedContact.fromMap(String id, Map<String, dynamic> data) =>
+      TrustedContact(
+        id: id,
+        name: data['name'] as String? ?? '',
+        relationship: data['relationship'] as String? ?? '',
+        phone: data['phone'] as String? ?? '',
+      );
+  Map<String, dynamic> toMap() => {
+    'name': name.trim(),
+    'relationship': relationship.trim(),
+    'phone': phone.trim(),
+  };
 }

@@ -1,153 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../data/profile_data.dart';
 import '../models/trusted_contact.dart';
-import '../widgets/contact_tile.dart';
-import '../widgets/pending_dialog.dart';
+import '../providers/account_provider.dart';
+import '../widgets/contact_editor.dart';
 
 class TrustedContactsScreen extends StatefulWidget {
   const TrustedContactsScreen({super.key});
-
   @override
   State<TrustedContactsScreen> createState() => _TrustedContactsScreenState();
 }
 
 class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
-  final List<TrustedContact> _contacts = [...trustedContacts];
-  String _primaryId = trustedContacts.first.id;
-
-  void _showSnackBar(SnackBar snackBar) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
-  }
-
-  void _setPrimary(TrustedContact contact) {
-    setState(() => _primaryId = contact.id);
-    _showSnackBar(
-      SnackBar(
-        content: Text('${contact.name} ahora es tu contacto principal.'),
-      ),
-    );
-  }
-
-  void _removeContact(TrustedContact contact, int index) {
-    final previousPrimaryId = _primaryId;
-    setState(() {
-      _contacts.removeAt(index);
-      if (_primaryId == contact.id && _contacts.isNotEmpty) {
-        _primaryId = _contacts.first.id;
+  bool _busy = false;
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() => _busy = true);
+    try {
+      await action();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo completar la operación. Vuelve a intentar.',
+            ),
+          ),
+        );
       }
-    });
-    _showSnackBar(
-      SnackBar(
-        content: Text('${contact.name} se quitó de tus contactos.'),
-        action: SnackBarAction(
-          label: 'Deshacer',
-          onPressed: () => setState(() {
-            _contacts.insert(index, contact);
-            _primaryId = previousPrimaryId;
-          }),
-        ),
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _edit([TrustedContact? contact]) => showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => ContactEditor(contact: contact),
+  );
+  Future<void> _delete(TrustedContact contact) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar contacto'),
+        content: Text('¿Quieres eliminar a ${contact.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
+    if (!mounted || confirmed != true) return;
+    final account = context.read<AccountProvider>();
+    await _run(() => account.deleteContact(contact.id));
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final account = context.watch<AccountProvider>();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Contactos de confianza',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Contactos de confianza')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showPendingDialog(
-          context,
-          'Aquí podrás agregar un contacto desde tu agenda para que te acompañe en tus trayectos. Funcionalidad pendiente.',
-        ),
+        onPressed: _busy ? null : () => _edit(),
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text('Agregar'),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-            children: [
-              const Text(
-                'Quienes te cuidan.',
-                style: TextStyle(fontSize: 29, fontWeight: FontWeight.w800),
+      body: RefreshIndicator(
+        onRefresh: () => _run(account.refresh),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            const Text(
+              'Quienes te cuidan.',
+              style: TextStyle(fontSize: 29, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Elige un contacto principal con la estrella. Desliza hacia abajo para actualizar.',
+            ),
+            if (_busy) const LinearProgressIndicator(),
+            const SizedBox(height: 20),
+            if (account.contacts.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('Aún no tienes contactos. Agrega el primero.'),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Toca un contacto para hacerlo principal. Recibirá una alerta si algo no va bien en tu trayecto.',
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: colors.onSurfaceVariant,
+            for (final contact in account.contacts)
+              Card(
+                child: ListTile(
+                  title: Text(contact.name),
+                  subtitle: Text('${contact.relationship} · ${contact.phone}'),
+                  leading: IconButton(
+                    tooltip: 'Elegir como principal',
+                    icon: Icon(
+                      account.primaryContact?.id == contact.id
+                          ? Icons.star
+                          : Icons.star_border,
+                    ),
+                    onPressed: _busy
+                        ? null
+                        : () => _run(() => account.setPrimary(contact.id)),
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    enabled: !_busy,
+                    onSelected: (action) {
+                      if (action == 'edit') {
+                        _edit(contact);
+                      } else {
+                        _delete(contact);
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 28),
-              for (final (index, contact) in _contacts.indexed)
-                // Swipe left to remove a contact from the list.
-                Dismissible(
-                  key: ValueKey(contact.id),
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (_) => _removeContact(contact, index),
-                  background: Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      decoration: BoxDecoration(
-                        color: colors.error,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Icon(
-                        Icons.delete_outline_rounded,
-                        color: colors.onError,
-                      ),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: ContactTile(
-                      contact: contact,
-                      primary: contact.id == _primaryId,
-                      onTap: () => _setPrimary(contact),
-                      onCall: () => showPendingDialog(
-                        context,
-                        'Aquí se llamará a ${contact.name} al ${contact.phone}. Funcionalidad pendiente.',
-                      ),
-                    ),
-                  ),
-                ),
-              if (_contacts.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 28),
-                  child: Text(
-                    'Aún no tienes contactos de confianza.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.onSurfaceVariant),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Desliza un contacto hacia la izquierda para quitarlo.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );

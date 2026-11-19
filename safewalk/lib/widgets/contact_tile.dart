@@ -61,7 +61,9 @@ class ContactTile extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        contact.name.substring(0, 1),
+                        contact.name.isEmpty
+                            ? '?'
+                            : contact.name.substring(0, 1),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 21,
@@ -76,9 +78,7 @@ class ContactTile extends StatelessWidget {
                         width: 14,
                         height: 14,
                         decoration: BoxDecoration(
-                          color: contact.available
-                              ? const Color(0xFF59C36A)
-                              : colors.outline,
+                          color: colors.primary,
                           shape: BoxShape.circle,
                           border: Border.all(color: colors.surface, width: 2),
                         ),
@@ -128,8 +128,7 @@ class ContactTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${contact.relationship} · '
-                        '${contact.available ? 'Disponible' : 'No disponible'}',
+                        contact.relationship,
                         style: TextStyle(
                           fontSize: 14,
                           color: colors.onSurfaceVariant,

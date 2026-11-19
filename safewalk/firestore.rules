@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function profileValid() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'email', 'phone', 'city', 'primaryContactId', 'createdAt', 'updatedAt', 'preferences'])
+        && d.name is string && d.name.size() <= 100
+        && d.email is string && d.email == request.auth.token.email
+        && d.phone is string && d.phone.size() <= 25
+        && d.city is string && d.city.size() <= 100
+        && d.createdAt is timestamp && d.updatedAt is timestamp
+        && (d.primaryContactId == null || (d.primaryContactId is string
+          && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/contacts/$(d.primaryContactId))))
+        && (!('preferences' in d) || (d.preferences is map
+          && d.preferences.keys().hasOnly(['darkMode', 'notifications', 'journeyReminders'])
+          && (!('darkMode' in d.preferences) || d.preferences.darkMode is bool)
+          && (!('notifications' in d.preferences) || d.preferences.notifications is bool)
+          && (!('journeyReminders' in d.preferences) || d.preferences.journeyReminders is bool)));
+    }
+    match /users/{uid} {
+      allow read: if owner(uid);
+      allow create: if owner(uid) && profileValid();
+      allow update: if owner(uid) && profileValid()
+        && request.resource.data.createdAt == resource.data.createdAt;
+      match /contacts/{contactId} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid)
+          && request.resource.data.keys().hasOnly(['name', 'relationship', 'phone'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.relationship is string
+          && request.resource.data.relationship.size() > 0 && request.resource.data.relationship.size() <= 100
+          && request.resource.data.phone is string
+          && request.resource.data.phone.matches('^[+0-9 ()-]{7,25}$');
+      }
+      match /destinations/{destinationId} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid)
+          && request.resource.data.keys().hasOnly(['title', 'address', 'lat', 'lng'])
+          && (!('lat' in request.resource.data) || request.resource.data.lat is number)
+          && (!('lng' in request.resource.data) || request.resource.data.lng is number)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 100
+          && request.resource.data.address is string
+          && request.resource.data.address.size() > 0 && request.resource.data.address.size() <= 300;
+      }
+      // Journey tracking is a separate feature. This change only reads its data.
+      match /trips/{tripId} { allow read: if owner(uid); }
+    }
+  }
+}

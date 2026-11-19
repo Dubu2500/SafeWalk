@@ -122,11 +122,9 @@ class _PickDestinationScreenState extends State<PickDestinationScreen> {
     Navigator.pop(
       context,
       Destination(
-        id: 'recent',
-        title: 'Destino reciente',
+        id: '',
+        title: '',
         subtitle: _selectedLabel ?? 'Punto en el mapa',
-        emoji: '🕘',
-        kind: DestinationKind.recent,
         latitude: point.latitude,
         longitude: point.longitude,
       ),

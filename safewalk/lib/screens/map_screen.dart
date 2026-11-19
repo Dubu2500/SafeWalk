@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
-import '../data/home_data.dart';
 import '../models/destination.dart';
+import '../providers/account_provider.dart';
+import '../services/geocoding_service.dart';
 import '../services/route_service.dart';
 import '../widgets/friend_card.dart';
 import '../widgets/off_route.dart';
@@ -33,6 +35,9 @@ class _MapScreenState extends State<MapScreen> {
   StreamSubscription<Position>? _positionSubscription;
 
   Destination? _destination;
+  LatLng? _destinationPoint;
+  String _contactName = 'Tu contacto';
+  bool _started = false;
   LatLng? _myLocation;
   WalkingRoute? _route;
   bool _mapReady = false;
@@ -46,9 +51,11 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_destination != null) return;
-    final argument = ModalRoute.of(context)?.settings.arguments;
-    _destination = argument is Destination ? argument : destinations.first;
+    if (_started) return;
+    _started = true;
+    final account = context.read<AccountProvider>();
+    _destination = account.selectedDestination;
+    _contactName = account.primaryContact?.name ?? _contactName;
     _start();
   }
 
@@ -58,10 +65,23 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-  LatLng? get _destinationPoint {
+  // Usa las coordenadas guardadas o, si no hay, busca la dirección.
+  Future<LatLng> _resolveDestination(LatLng near) async {
     final destination = _destination;
-    if (destination == null || !destination.hasLocation) return null;
-    return LatLng(destination.latitude!, destination.longitude!);
+    if (destination == null) {
+      throw Exception('Elige un destino en la pantalla de inicio.');
+    }
+    if (destination.hasLocation) {
+      return LatLng(destination.latitude!, destination.longitude!);
+    }
+    final places = await GeocodingService.search(
+      destination.subtitle,
+      near: near,
+    );
+    if (places.isEmpty) {
+      throw Exception('No encontramos la dirección de este destino.');
+    }
+    return places.first.point;
   }
 
   String? get _arrivalTime {
@@ -85,10 +105,7 @@ class _MapScreenState extends State<MapScreen> {
     try {
       final position = await _currentPosition();
       final myLocation = LatLng(position.latitude, position.longitude);
-      final destinationPoint = _destinationPoint;
-      if (destinationPoint == null) {
-        throw Exception('Este destino no tiene ubicación.');
-      }
+      final destinationPoint = await _resolveDestination(myLocation);
       final route = await RouteService.walkingRoute(
         myLocation,
         destinationPoint,
@@ -96,6 +113,7 @@ class _MapScreenState extends State<MapScreen> {
       if (!mounted) return;
       setState(() {
         _myLocation = myLocation;
+        _destinationPoint = destinationPoint;
         _route = route;
         _loading = false;
       });
@@ -171,7 +189,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _handleOffRoute() async {
     if (_alertOpen) return;
     _alertOpen = true;
-    await showOffRouteDialog(context, trustedContactName);
+    await showOffRouteDialog(context, _contactName);
     _alertOpen = false;
     _offRouteCount = 0;
     if (mounted) await _recalculate();
@@ -216,7 +234,7 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('¡Llegaste!'),
         content: Text(
           'Llegaste a ${_destination?.title ?? 'tu destino'}. '
-          'Le avisaremos a $trustedContactName que estás bien.',
+          'Le avisaremos a $_contactName que estás bien.',
         ),
         actions: [
           FilledButton(
@@ -399,7 +417,7 @@ class _MapScreenState extends State<MapScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const CompanionCard(name: trustedContactName),
+                    CompanionCard(name: _contactName),
                     const SizedBox(height: 14),
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
@@ -408,7 +426,7 @@ class _MapScreenState extends State<MapScreen> {
                       onPressed: () {
                         showPendingDialog(
                           context,
-                          'Aquí podrás compartir tu viaje en tiempo real con $trustedContactName.',
+                          'Aquí podrás compartir tu viaje en tiempo real con $_contactName.',
                         );
                       },
                       icon: const Icon(Icons.share_location_rounded),
@@ -424,7 +442,7 @@ class _MapScreenState extends State<MapScreen> {
                       onPressed: () {
                         showPendingDialog(
                           context,
-                          'El aviso de ayuda a $trustedContactName estará disponible próximamente.',
+                          'El aviso de ayuda a $_contactName estará disponible próximamente.',
                         );
                       },
                       child: const Text('Necesito ayuda'),
