@@ -30,8 +30,8 @@ const _sections = [
   ),
   (
     'Eliminar tus datos',
-    'Puedes borrar tus contactos y destinos desde la app. Para eliminar tu cuenta '
-        'completa escríbenos desde Ajustes > Ayuda y soporte.',
+    'Puedes borrar tus contactos y destinos desde la app en cualquier momento, '
+        'y quitar tu foto de perfil desde tu perfil.',
   ),
 ];
 

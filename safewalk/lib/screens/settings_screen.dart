@@ -171,10 +171,7 @@ class SettingsScreen extends StatelessWidget {
                     leading: const Icon(Icons.help_outline_rounded),
                     title: const Text('Ayuda y soporte'),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => showPendingDialog(
-                      context,
-                      'Aquí podrás consultar ayuda y contactar al equipo de SafeWalk. Funcionalidad pendiente.',
-                    ),
+                    onTap: () => Navigator.pushNamed(context, '/help'),
                   ),
                 ],
               ),

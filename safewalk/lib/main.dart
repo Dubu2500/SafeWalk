@@ -8,6 +8,7 @@ import 'providers/user_provider.dart';
 import 'providers/account_provider.dart';
 import 'providers/photo_provider.dart';
 import 'widgets/account_gate.dart';
+import 'screens/help_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/profile_screen.dart';
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         '/settings': (_) => const AccountGate(child: SettingsScreen()),
         '/profile': (_) => const AccountGate(child: ProfileScreen()),
         '/contacts': (_) => const AccountGate(child: TrustedContactsScreen()),
+        '/help': (_) => const AccountGate(child: HelpScreen()),
       },
     );
   }
