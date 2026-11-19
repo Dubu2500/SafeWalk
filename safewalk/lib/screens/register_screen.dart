@@ -6,7 +6,7 @@ import '../providers/user_provider.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/form_error_text.dart';
-import '../widgets/pending_dialog.dart';
+import '../widgets/terms_dialog.dart';
 import '../widgets/primary_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -166,10 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
                   ),
-                  onPressed: () => showPendingDialog(
-                    context,
-                    'Aquí se mostrarán los términos de uso y el aviso de privacidad de SafeWalk. El contenido legal está pendiente.',
-                  ),
+                  onPressed: () => showTermsDialog(context),
                   child: const Text('Términos y privacidad'),
                 ),
               ],
